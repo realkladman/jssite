@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../styles/styles.css">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>File Sharing</title>
+
+
+</head>
+<body>
+
+ <h1 id="linkk"><a href="/">File Sharing by Dickson</a></h1>
+ <h1 id="api"><a href="/api.html">API</a></h1>
+
+ <video autoplay loop class="video-background">
+  <source src="test.mp4" type="video/mp4">
+  Ваш браузер не поддерживает видео.
+</video>
+
+
+ <div class="uploadContainer">
+    <label for="fileInput" class="uploadButton" id="uploadButtonLabel">Upload File</label>
+    <input type="file" id="fileInput" onchange="updateButtonText(this)">
+  </div>
+ 
+ <div id="expiryButtons">
+  <button onclick="uploadFile(1)">Delete after 1 day</button>
+  <button onclick="uploadFile(3)">Delete after 3 days</button>
+  <button onclick="uploadFile(5)">Delete after 5 days</button>
+  <button onclick="uploadFile(14)">Delete after 14 days</button>
+</div>
+
+<div id="downloadLink"></div>
+
+<script>
+const fileInput = document.getElementById('fileInput');
+const downloadLinkContainer = document.getElementById('downloadLink');
+function updateButtonText(input) {
+    var fileName = input.files[0] ? input.files[0].name : 'Upload File';
+    document.getElementById('uploadButtonLabel').innerText = fileName;
+  }
+
+function uploadFile(days) {
+  const file = fileInput.files[0];
+  if (!file) {
+    alert('Please select a file.');
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('file', file);
+
+  fetch('/upload', {
+    method: 'POST',
+    body: formData
+  })
+  .then(response => response.json())
+  .then(data => {
+    const downloadLink = `<a href="${data.downloadLink}">Download File</a>`;
+    downloadLinkContainer.innerHTML = downloadLink;
+
+    // Удаляем файл по истечении времени
+    const filePath = 'uploads/' + data.downloadLink.split('/').pop();
+    deleteFileAfterTime(filePath, days);
+  })
+  .catch(error => {
+    console.error('Error:', error);
+  });
+}
+
+function deleteFileAfterTime(filePath, days) {
+  const hours = days * 24;
+  const minutes = hours * 60;
+  const seconds = minutes * 60;
+  const milliseconds = seconds * 1000;
+
+  setTimeout(() => {
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        console.error('Error deleting file:', err);
+      } else {
+        console.log(`File ${filePath} deleted after ${days} days.`);
+      }
+    });
+  }, milliseconds);
+}
+</script>
+
+</body>
+</html>
